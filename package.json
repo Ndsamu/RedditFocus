@@ -1,0 +1,28 @@
+{
+  "name": "RedditFocus",
+  "version": "1.0.0",
+  "description": "A simple Web App which highlights only one post or comment using React, Node.JS, and Express.",
+  "engines": {
+    "node": "10.x"
+  },
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Ndsamu/RedditFocus.git"
+  },
+  "author": "Nathan Samuelson",
+  "license": "ISC"
+}
