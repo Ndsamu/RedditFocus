@@ -1,13 +1,13 @@
-# RedditFocus
+# RedditFocus #
 A simple Web App which highlights only one post or comment using React, Node.JS, and Express.
 
-##TODO
+## TODO ##
 
-### Client Side
+### Client Side ###
 
 - Parse URL and pass to Server
 
-### Server Side
+### Server Side ###
 
 - Take parsed URL and determine course of action
     - Plain Reddit URL?
@@ -27,11 +27,10 @@ A simple Web App which highlights only one post or comment using React, Node.JS,
     - Present Title and Body of post
 
 - Comment URL
-    - 
 
 
 
-### Relevant Snoowrap Functions
+### Relevant Snoowrap Functions ###
 
 ```
 // Get top post in redditdev subreddit
@@ -54,7 +53,7 @@ reddit.getSubmission('3g8u2t').selftext.then(body => {
 
 ```
 
-### Reddit Links
+### Reddit Links ###
 
 **Reddit**: https://www.reddit.com/
 
