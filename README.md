@@ -40,11 +40,11 @@ A simple Web App which highlights only one post or comment using React, Node.JS,
     - Access Parent
         - Access via parent ID
     - Access Previous Sibling
-        - Access parent comement, find index of original comment
+        - Access parent comment, find index of original comment
         - Access the adjacent sibling as the previous reply (i.e. comment.replies[index-1])
         - If no siblings exist, continue accessing parent comment until sibling is found
     - Access Next Sibling
-        - Access parent comement, find index of original comment
+        - Access parent comment, find index of original comment
         - Access the adjacent sibling as the previous reply (i.e. comment.replies[index+1])
         - If no siblings exist, continue accessing parent comment until sibling is found
 
@@ -55,11 +55,11 @@ A simple Web App which highlights only one post or comment using React, Node.JS,
         - Use getSubreddit(submission.subreddit.display_name)
     - Access Previous Sibling
         - Use getSubreddit(submission.subreddit.display_name).hot() (or possibly user chosen parameter)
-        - Access parent comement, find index of original comment
+        - Access parent comment, find index of original comment
         - Access the adjacent sibling as the previous post (i.e. TBD)
     - Access Next Sibling
         - Use getSubreddit(submission.subreddit.display_name).hot() (or possibly user chosen parameter)
-        - Access parent comement, find index of original comment
+        - Access parent comment, find index of original comment
         - Access the adjacent sibling as the previous post (i.e. TBD)
 
 - Subreddit (Subreddit Object)
