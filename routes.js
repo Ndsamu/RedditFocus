@@ -17,13 +17,8 @@ const reddit = new Snoowrap({
     password: process.env.REDDIT_PASS
 })
 
-
-
-
 // GOTG: 5gn8ru
 // Random: atxpa0
-
-
 
 async function test_getChildComment() {
     const submission = await reddit.getSubmission('5gn8ru').fetch()
@@ -128,73 +123,40 @@ async function test_getNextComment() {
 }
 
 async function test_commentNavigation() {
-    const submission = await reddit.getSubmission('atxpa0').fetch()
-    var t1_comment = submission.comments[0]
+    await initializeSubmission('5gn8ru')
+
+    const t1_comment = submission.comments[0]
     
     console.log('Original Comment: ' + t1_comment.author.name)
-    var test0 = await getNextComment(t1_comment)
-    console.log("Test 0: " + test0.author.name)
-    var test1 = await getNextComment(test0)
-    console.log("Test 1: " + test1.author.name)
-    var test2 = await getNextComment(test1)
-    console.log("Test 2: " + test2.author.name)
-    var test3 = await getNextComment(test2)
-    console.log("Test 3: " + test3.author.name)
-    var test4 = await getNextComment(test3)
-    console.log("Test 4: " + test4.author.name)
-    var test5 = await getNextComment(test4)
-    console.log("Test 5: " + test5.author.name)
-    var test6 = await getNextComment(test5)
-    console.log("Test 6: " + test6.author.name)
-    var test7 = await getNextComment(test6)
-    console.log("Test 7: " + test7.author.name)
-    var test8 = await getNextComment(test7)
-    console.log("Test 8: " + test8.author.name)
-    var test9 = await getNextComment(test8)
-    console.log("Test 9: " + test9.author.name)
-    var test10 = await getNextComment(test9)
-    console.log("Test 10: " + test10.author.name)
-    var test11 = await getNextComment(test10)
-    console.log("Test 11: " + test11.author.name)
-    var test12 = await getNextComment(test11)
-    console.log("Test 12: " + test12.author.name)
-    var test13 = await getNextComment(test12)
-    console.log("Test 13: " + test13.author.name)
-    var test14 = await getNextComment(test13)
-    console.log("Test 14: " + test14.author.name)
-    var test15 = await getNextComment(test14)
-    console.log("Test 15: " + test15.author.name)
-    var test16 = await getNextComment(test15)
-    console.log("Test 16: " + test16.author.name)
-    var test17 = await getNextComment(test16)
-    console.log("Test 17: " + test17.author.name)
-    var test18 = await getNextComment(test17)
-    console.log("Test 18: " + test18.author.name)
-    var test19 = await getNextComment(test18)
-    console.log("Test 19: " + test19.author.name)
-    var test20 = await getNextComment(test19)
-    console.log("Test 20: " + test20.author.name)
-    var test21 = await getNextComment(test20)
-    console.log("Test 21: " + test21.author.name)
-    var test22 = await getNextComment(test21)
-    console.log("Test 22: " + test22.author.name)
-    var test23 = await getNextComment(test22)
-    console.log("Test 23: " + test23.author.name)
+    var test = await getNextComment(t1_comment)
+    for (var i=0; i<20; i++) {
+        console.log("Test" + i + ": " + test.author.name)
+        test = await getNextComment(test)
+    }
 }
-
-var submission
 
 async function test_expandReplies() {
     submission = await reddit.getSubmission('5gn8ru').expandReplies({limit: 100, depth: 1})
     console.log("Num Comments: " + submission.comments.length)
 }
 
+var submission
+var commentCache = {}
+
+async function initializeSubmission(submissionID) {
+    submission = await reddit.getSubmission(submissionID).expandReplies({limit: 100, depth: 1})
+}
+
+async function updateCommentCache(commentID) {
+    commentCache = await reddit.getComment(commentID).expandReplies({limit: 10, depth: 1})
+}
+
 async function test_all() {
     //await test_getChildComment()
     //await test_getParentComment()
-    await test_getPrevComment()
+    //await test_getPrevComment()
     //await test_getNextComment()
-    //await test_commentNavigation()
+    await test_commentNavigation()
     //await test_expandReplies()
 }
 
@@ -203,8 +165,9 @@ test_all()
 
 //  Comment Functionality   //
 
-// Returns a Comment Object
+
 async function getChildComment(comment) {
+    await updateCommentCache(comment.name)
     var child = comment
     const original = await comment.expandReplies({limit: 1, depth: 1})
     if (original.replies[0]) {
@@ -213,31 +176,31 @@ async function getChildComment(comment) {
     return child
 }
 
-// Returns a Comment Object OR Submission Object (Need to figure out case for Submission)
 async function getParentComment(comment) {
     const parent = await reddit.getComment(comment.parent_id).fetch()
+    if (parent.constructor.name == 'Comment') {
+        await updateCommentCache(parent.parent_id)
+    }
     return parent
 }
 
-// Parent_id references the "name" parameter of parent comment
+
 async function getPrevComment(comment) {
     var prev = comment
-    var parent = await reddit.getComment(comment.parent_id)
-    console.log(parent.constructor.name)
-    const len = parent.replies.length
+    var parent = await reddit.getComment(comment.parent_id).fetch()
     var i
 
     if (parent.constructor.name == 'Comment') {
-        for (i = 1; i<len; i++) {
-            if (comment.name == parent.replies[i].name) {
-                prev = parent.replies[i-1]
+        for (i = 1; i<commentCache.length; i++) {
+            if (comment.name == commentCache[i].name) {
+                prev = commentCache[i-1]
                 break
             }
         }
     } else {
-        for (i = 1; i<len; i++) {
-            if (comment.name == parent.comments[i].name) {
-                prev = parent.comments[i-1]
+        for (i = 1; i<submission.comments.length; i++) {
+            if (comment.name == submission.comments[i].name) {
+                prev = submission.comments[i-1]
                 break
             }
         }
@@ -248,23 +211,20 @@ async function getPrevComment(comment) {
 
 async function getNextComment(comment) {
     var next = comment
-    const parent = await reddit.getComment(comment.parent_id).expandReplies({limit: 20, depth: 1})
-    var len
+    var parent = await reddit.getComment(comment.parent_id).fetch()
     var i
 
     if (parent.constructor.name == 'Comment') {
-        len = parent.replies.length
-        for (i = 0; i<(len-1); i++) {
-            if (comment.name == parent.replies[i].name) {
-                next = parent.replies[i+1]
+        for (i = 0; i<(commentCache.length-1); i++) {
+            if (comment.name == commentCache[i].name) {
+                next = commentCache[i+1]
                 break
             }
         }
     } else {
-        len = parent.comments.length
-        for (i = 0; i<(len-1); i++) {
-            if (comment.name == parent.comments[i].name) {
-                next = parent.comments[i+1]
+        for (i = 0; i<(submission.comments.length-1); i++) {
+            if (comment.name == submission.comments[i].name) {
+                next = submission.comments[i+1]
                 break
             }
         }
@@ -309,55 +269,3 @@ router.post('/navigate/child', (req, res) => {
 })
 
 module.exports = router
-
-// CODE GRAVEYARD
-
-/*
-
-reddit.getSubmission('3g8u2t').selftext.then(body => {
-    //var subBody = submission.selftext.replace(/(\r\n|\n|\r)/gm, " ")
-    console.log(body.replace(/(\r\n|\n|\r)/gm, " "))
-})
-
-
-reddit.getSubreddit('AskReddit').fetch().then(subreddit => {
-    console.log(subreddit.toJSON())
-})
-
-
-reddit.getComment('t3_atmg2l').fetch().then(comment => {
-    if (comment.parent_id) {
-        console.log("Parent ID")
-    } else {
-        console.log("No parent ID")
-    }
-    console.log(comment.parent_id)
-})
-
-reddit.getComment('t1_davf98k').fetch().then(comment => {
-    console.log(comment.parent_id)
-    reddit.getComment(comment.parent_id).fetch().then(comment => {
-        console.log(comment.parent_id)
-        reddit.getComment(comment.parent_id).fetch().then(comment => {
-            console.log(comment.parent_id)
-        })
-    })
-})
-
-async function getSubmission(comment) {
-    while (comment.parent_id) {
-        await reddit.getComment(comment.parent_id).fetch().then(parent => {
-            comment = parent
-        })
-    }
-    return comment
-
-var commentCache = new Map()
-
-if (commentCache.has(comment.author.name)) {
-    console.log("Cache hit!")
-    return commentCache.get(comment.author.name)
-} else {
-}
-
-*/
