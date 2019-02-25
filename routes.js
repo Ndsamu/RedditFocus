@@ -94,14 +94,14 @@ async function test_getPrevComment() {
     if (test1.name == t2_comment1.name) {
         console.log("getPrevComment: Test1 - Success")
     } else {
-        console.log("getChildComment: Test1 - Failure")
+        console.log("getPrevComment: Test1 - Failure")
     }
 
     var test2 = await getPrevComment(t2_comment3)
     if (test2.name == t2_comment2.name) {
         console.log("getPrevComment: Test2 - Success")
     } else {
-        console.log("getChildComment: Test2 - Failure")
+        console.log("getPrevComment: Test2 - Failure")
     }
 }
 
@@ -114,9 +114,9 @@ async function test_getNextComment() {
     
     var test1 = await getNextComment(t2_comment1)
     if (test1.name == t2_comment2.name) {
-        console.log("getPrevComment: Test1 - Success")
+        console.log("getNextComment: Test1 - Success")
     } else {
-        console.log("getChildComment: Test1 - Failure")
+        console.log("getNextComment: Test1 - Failure")
     }
 
     var test2 = await getNextComment(t2_comment2)
@@ -127,13 +127,14 @@ async function test_getNextComment() {
     }
 }
 
-async function test_navigation() {
-    const submission = await reddit.getSubmission('5gn8ru').fetch()
+async function test_commentNavigation() {
+    const submission = await reddit.getSubmission('atxpa0').fetch()
     var t1_comment = submission.comments[0]
-    var t2_comment1 = submission.comments[0].replies[0]
-    var t2_comment2 = submission.comments[0].replies[1]
-    var t3_comment1 = submission.comments[0].replies[0].replies[0]
-    var test1 = await getChildComment(t1_comment)
+    
+    console.log('Original Comment: ' + t1_comment.author.name)
+    var test0 = await getNextComment(t1_comment)
+    console.log("Test 0: " + test0.author.name)
+    var test1 = await getNextComment(test0)
     console.log("Test 1: " + test1.author.name)
     var test2 = await getNextComment(test1)
     console.log("Test 2: " + test2.author.name)
@@ -153,9 +154,9 @@ async function test_navigation() {
     console.log("Test 9: " + test9.author.name)
     var test10 = await getNextComment(test9)
     console.log("Test 10: " + test10.author.name)
-    var test11 = await getChildComment(test10)
+    var test11 = await getNextComment(test10)
     console.log("Test 11: " + test11.author.name)
-    var test12 = await getParentComment(test11)
+    var test12 = await getNextComment(test11)
     console.log("Test 12: " + test12.author.name)
     var test13 = await getNextComment(test12)
     console.log("Test 13: " + test13.author.name)
@@ -163,14 +164,38 @@ async function test_navigation() {
     console.log("Test 14: " + test14.author.name)
     var test15 = await getNextComment(test14)
     console.log("Test 15: " + test15.author.name)
+    var test16 = await getNextComment(test15)
+    console.log("Test 16: " + test16.author.name)
+    var test17 = await getNextComment(test16)
+    console.log("Test 17: " + test17.author.name)
+    var test18 = await getNextComment(test17)
+    console.log("Test 18: " + test18.author.name)
+    var test19 = await getNextComment(test18)
+    console.log("Test 19: " + test19.author.name)
+    var test20 = await getNextComment(test19)
+    console.log("Test 20: " + test20.author.name)
+    var test21 = await getNextComment(test20)
+    console.log("Test 21: " + test21.author.name)
+    var test22 = await getNextComment(test21)
+    console.log("Test 22: " + test22.author.name)
+    var test23 = await getNextComment(test22)
+    console.log("Test 23: " + test23.author.name)
+}
+
+var submission
+
+async function test_expandReplies() {
+    submission = await reddit.getSubmission('5gn8ru').expandReplies({limit: 100, depth: 1})
+    console.log("Num Comments: " + submission.comments.length)
 }
 
 async function test_all() {
-    await test_getChildComment()
-    await test_getParentComment()
+    //await test_getChildComment()
+    //await test_getParentComment()
     await test_getPrevComment()
-    await test_getNextComment()
-    await test_navigation()
+    //await test_getNextComment()
+    //await test_commentNavigation()
+    //await test_expandReplies()
 }
 
 test_all()
@@ -180,7 +205,11 @@ test_all()
 
 // Returns a Comment Object
 async function getChildComment(comment) {
-    const child = await reddit.getComment(comment.replies[0]).fetch()
+    var child = comment
+    const original = await comment.expandReplies({limit: 1, depth: 1})
+    if (original.replies[0]) {
+        child = await reddit.getComment(original.replies[0].name).fetch()
+    }
     return child
 }
 
@@ -192,28 +221,54 @@ async function getParentComment(comment) {
 
 // Parent_id references the "name" parameter of parent comment
 async function getPrevComment(comment) {
-    var prev = undefined
-    const parentComment = await reddit.getComment(comment.parent_id).expandReplies({limit: 15, depth: 1})
-    
-    parentComment.replies.forEach(function(reply, index) {
-        if (comment.name == reply.name && index >= 0) {
-            prev = parentComment.replies[index-1]
+    var prev = comment
+    var parent = await reddit.getComment(comment.parent_id)
+    console.log(parent.constructor.name)
+    const len = parent.replies.length
+    var i
+
+    if (parent.constructor.name == 'Comment') {
+        for (i = 1; i<len; i++) {
+            if (comment.name == parent.replies[i].name) {
+                prev = parent.replies[i-1]
+                break
+            }
         }
-    })
+    } else {
+        for (i = 1; i<len; i++) {
+            if (comment.name == parent.comments[i].name) {
+                prev = parent.comments[i-1]
+                break
+            }
+        }
+    }
 
     return prev
 }
 
 async function getNextComment(comment) {
-    var next = undefined
-    const parentComment = await reddit.getComment(comment.parent_id).expandReplies({limit: 15, depth: 1})
-    
-    parentComment.replies.forEach(function(reply, index) {
-        //commentCache.set(reply.author.name, reply)
-        if (comment.name == reply.name && index < 15) {
-            next = parentComment.replies[index+1]
+    var next = comment
+    const parent = await reddit.getComment(comment.parent_id).expandReplies({limit: 20, depth: 1})
+    var len
+    var i
+
+    if (parent.constructor.name == 'Comment') {
+        len = parent.replies.length
+        for (i = 0; i<(len-1); i++) {
+            if (comment.name == parent.replies[i].name) {
+                next = parent.replies[i+1]
+                break
+            }
         }
-    })
+    } else {
+        len = parent.comments.length
+        for (i = 0; i<(len-1); i++) {
+            if (comment.name == parent.comments[i].name) {
+                next = parent.comments[i+1]
+                break
+            }
+        }
+    }
 
     return next
 }
@@ -222,8 +277,6 @@ async function getNextComment(comment) {
 // Returns the parent of any object
 function getParent(element) {
     switch (element.constructor.name) {
-        case 'Subreddit':
-            break;
         case 'Submission':
             break;
         case 'Comment':
