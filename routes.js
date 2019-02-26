@@ -17,217 +17,147 @@ const reddit = new Snoowrap({
     password: process.env.REDDIT_PASS
 })
 
-// GOTG: 5gn8ru
-// Random: atxpa0
+var submission // Stores <= #maxComments comments
+var commentCache = {} // Stores a cache of <= #maxReplies replies
+var commentIndex = 0
+var commentPath = [] // Stores the indexes of subcomments accessed
+var maxComments = 500
+var maxReplies = 100
+var comment // Used to pass information to client
 
-async function test_getChildComment() {
-    const submission = await reddit.getSubmission('5gn8ru').fetch()
-    var t1_comment = submission.comments[0]
-    var t2_comment = submission.comments[0].replies[0]
-    var t3_comment = submission.comments[0].replies[0].replies[0]
-    var t4_comment = submission.comments[0].replies[0].replies[0].replies[0]
-
-    var test1 = await getChildComment(t1_comment)
-    if (test1.name == t2_comment.name) {
-        console.log("getChildComment: Test1 - Success")
-    } else {
-        console.log("getChildComment: Test1 - Failure")
-    }
-
-    var test2 = await getChildComment(t2_comment)
-    if (test2.name == t3_comment.name) {
-        console.log("getChildComment: Test2 - Success")
-    } else {
-        console.log("getChildComment: Test2 - Failure")
-    }
-
-    var test3 = await getChildComment(t3_comment)
-    if (test3.name == t4_comment.name) {
-        console.log("getChildComment: Test3 - Success")
-    } else {
-        console.log("getChildComment: Test3 - Failure")
-    }
+async function test() {
+    await initializeSubmission('z1c9z')
+    comment = submission.comments[0]
 }
-
-async function test_getParentComment() {
-    const submission = await reddit.getSubmission('5gn8ru').fetch()
-    var t1_comment = submission.comments[0]
-    var t2_comment = submission.comments[0].replies[0]
-    var t3_comment = submission.comments[0].replies[0].replies[0]
-    var t4_comment = submission.comments[0].replies[0].replies[0].replies[0]
-
-    var test1 = await getParentComment(t4_comment)
-    if (test1.name == t3_comment.name) {
-        console.log("getParentComment: Test1 - Success")
-    } else {
-        console.log("getParentComment: Test1 - Failure")
-    }
-
-    var test2 = await getParentComment(t3_comment)
-    if (test2.name == t2_comment.name) {
-        console.log("getParentComment: Test2 - Success")
-    } else {
-        console.log("getParentComment: Test2 - Failure")
-    }
-
-    var test3 = await getParentComment(t2_comment)
-    if (test3.name == t1_comment.name) {
-        console.log("getParentComment: Test3 - Success")
-    } else {
-        console.log("getParentComment: Test3 - Failure")
-    }
-}
-
-async function test_getPrevComment() {
-    const submission = await reddit.getSubmission('5gn8ru').fetch()
-    var t1_comment = submission.comments[0]
-    var t2_comment1 = submission.comments[0].replies[0]
-    var t2_comment2 = submission.comments[0].replies[1]
-    var t2_comment3 = submission.comments[0].replies[2]
-    
-    var test1 = await getPrevComment(t2_comment2)
-    if (test1.name == t2_comment1.name) {
-        console.log("getPrevComment: Test1 - Success")
-    } else {
-        console.log("getPrevComment: Test1 - Failure")
-    }
-
-    var test2 = await getPrevComment(t2_comment3)
-    if (test2.name == t2_comment2.name) {
-        console.log("getPrevComment: Test2 - Success")
-    } else {
-        console.log("getPrevComment: Test2 - Failure")
-    }
-}
-
-async function test_getNextComment() {
-    const submission = await reddit.getSubmission('5gn8ru').fetch()
-    var t1_comment = submission.comments[0]
-    var t2_comment1 = submission.comments[0].replies[0]
-    var t2_comment2 = submission.comments[0].replies[1]
-    var t2_comment3 = submission.comments[0].replies[2]
-    
-    var test1 = await getNextComment(t2_comment1)
-    if (test1.name == t2_comment2.name) {
-        console.log("getNextComment: Test1 - Success")
-    } else {
-        console.log("getNextComment: Test1 - Failure")
-    }
-
-    var test2 = await getNextComment(t2_comment2)
-    if (test2.name == t2_comment3.name) {
-        console.log("getNextComment: Test2 - Success")
-    } else {
-        console.log("getNextComment: Test2 - Failure")
-    }
-}
-
-async function test_commentNavigation() {
-    await initializeSubmission('5gn8ru')
-
-    const t1_comment = submission.comments[0]
-    
-    console.log('Original Comment: ' + t1_comment.author.name)
-    var test = await getNextComment(t1_comment)
-    for (var i=0; i<20; i++) {
-        console.log("Test" + i + ": " + test.author.name)
-        test = await getNextComment(test)
-    }
-}
-
-async function test_expandReplies() {
-    submission = await reddit.getSubmission('5gn8ru').expandReplies({limit: 100, depth: 1})
-    console.log("Num Comments: " + submission.comments.length)
-}
-
-var submission
-var commentCache = {}
 
 async function initializeSubmission(submissionID) {
-    submission = await reddit.getSubmission(submissionID).expandReplies({limit: 100, depth: 1})
+    console.log("initializeSubmission: Started")
+    submission = await reddit.getSubmission(submissionID).expandReplies({limit: 50, depth: 1})
+    expandSubmissionReplies(submissionID)
+    console.log("initializeSubmission: Complete")
 }
 
+async function expandSubmissionReplies(submissionID) {
+    console.log("expandingSubmissionReplies: Started")
+    submission = await reddit.getSubmission(submissionID).expandReplies({limit: maxComments, depth: 1})
+    console.log("expandingSubmissionReplies: Complete")
+}
+
+
+//////////////////////////////////  Comment Functionality   //////////////////////////////////
+
+// Begins updating the comment cache so that user can quickly access comments then more thorough update
 async function updateCommentCache(commentID) {
-    commentCache = await reddit.getComment(commentID).expandReplies({limit: 10, depth: 1})
+    var parent
+    // Initial update for quick access
+    parent = await reddit.getComment(commentID).expandReplies({limit: 5, depth: 1})
+    commentCache = parent.replies
+    console.log("First cache update complete.")
+    // Secondary update for larger number of comments
+    parent = await reddit.getComment(commentID).expandReplies({limit: 20, depth: 1})
+    commentCache = parent.replies
+    console.log("Second cache update complete.")
+    parent = await reddit.getComment(commentID).expandReplies({limit: maxReplies, depth: 1})
+    commentCache = parent.replies
+    console.log("Third cache update complete.")
 }
 
-async function test_all() {
-    //await test_getChildComment()
-    //await test_getParentComment()
-    //await test_getPrevComment()
-    //await test_getNextComment()
-    await test_commentNavigation()
-    //await test_expandReplies()
-}
+// Updates comment index in the case where a parent comment is accessed
+// Loops through replies to ensure that index is accurate
 
-test_all()
-
-
-//  Comment Functionality   //
-
-
-async function getChildComment(comment) {
-    await updateCommentCache(comment.name)
-    var child = comment
-    const original = await comment.expandReplies({limit: 1, depth: 1})
-    if (original.replies[0]) {
-        child = await reddit.getComment(original.replies[0].name).fetch()
+async function updateCommentIndex(child) {
+    // If parent is not the original submission, access the commentCache
+    if (child.parent_id != submission.name) {
+        if (commentPath) { // Check if comment index can be referenced from the commentPath
+            commentIndex = commentPath.pop()
+        } else { // Otherwise, loop through comments for the original and return its index
+            for (var i=0; i < (commentCache.length-1); i++) {
+                if (commentCache[i].name == child.name) {
+                    commentIndex = i
+                    break
+                }
+            }
+        }
+    // Else, access the submission's comments
+    } else {
+        if (commentPath) { // Check if comment index can be referenced from the commentPath
+            commentIndex = commentPath.pop()
+        } else { // Otherwise, loop through comments for the original and return its index
+            for (var i=0; i < (submission.comments.length-1); i++) {
+                if (submission.comments[i].name == child.name) {
+                    commentIndex = i
+                    break
+                }
+            }
+        }
     }
-    return child
 }
 
-async function getParentComment(comment) {
-    const parent = await reddit.getComment(comment.parent_id).fetch()
-    if (parent.constructor.name == 'Comment') {
-        await updateCommentCache(parent.parent_id)
+async function getChildComment(parent) {
+
+    // If a reply to this comment exists, fetch it and return
+    if (parent.replies[0]) {
+        updateCommentCache(parent.name)
+        const child = await reddit.getComment(parent.replies[0].name).fetch()
+        commentPath.push(commentIndex)
+        commentIndex = 0 // Only update commentIndex if a reply existed
+        return child
+    } else { // Try Expanding the replies if reply not found
+        parent = await parent.expandReplies({limit: 1, depth: 1})
+        if (parent.replies[0]) {
+            updateCommentCache(parent.name)
+            const child = await reddit.getComment(parent.replies[0].name).fetch()
+            commentPath.push(commentIndex)
+            commentIndex = 0 // Only update commentIndex if a reply existed
+            return child
+        }
     }
+    // Return original if no reply existed
     return parent
 }
 
+async function getParentComment(comment) {
+
+    // If we have not yet reached the comment ceiling
+    if (comment.parent_id != submission.name) {
+        var parent = await reddit.getComment(comment.parent_id).fetch()
+        if (parent.parent_id != submission.name) {
+            updateCommentCache(parent.parent_id)
+        }
+        updateCommentIndex(parent)
+        return parent
+    }
+    // If parent is a submission then we have reached the comment ceiling and return the original
+    return comment
+}
 
 async function getPrevComment(comment) {
-    var prev = comment
-    var parent = await reddit.getComment(comment.parent_id).fetch()
-    var i
+    var prev = comment // Default case where no previous comment exists
 
-    if (parent.constructor.name == 'Comment') {
-        for (i = 1; i<commentCache.length; i++) {
-            if (comment.name == commentCache[i].name) {
-                prev = commentCache[i-1]
-                break
-            }
-        }
-    } else {
-        for (i = 1; i<submission.comments.length; i++) {
-            if (comment.name == submission.comments[i].name) {
-                prev = submission.comments[i-1]
-                break
-            }
-        }
+    // If parent is a comment, access commentCache
+    if (comment.parent_id != submission.name && commentIndex > 0) {
+        commentIndex -= 1
+        prev = commentCache[commentIndex]
+    // If parent is a submission, access comments parameter
+    } else if (comment.parent_id == submission.name && commentIndex > 0) {
+        commentIndex -= 1
+        prev = submission.comments[commentIndex]
     }
 
     return prev
 }
 
 async function getNextComment(comment) {
-    var next = comment
-    var parent = await reddit.getComment(comment.parent_id).fetch()
-    var i
+    var next = comment // Default case (last comment reached)
 
-    if (parent.constructor.name == 'Comment') {
-        for (i = 0; i<(commentCache.length-1); i++) {
-            if (comment.name == commentCache[i].name) {
-                next = commentCache[i+1]
-                break
-            }
-        }
-    } else {
-        for (i = 0; i<(submission.comments.length-1); i++) {
-            if (comment.name == submission.comments[i].name) {
-                next = submission.comments[i+1]
-                break
-            }
-        }
+    // If parent is a comment, access commentCache
+    if (comment.parent_id != submission.name && commentIndex < (commentCache.length-1)) {
+        commentIndex += 1
+        next = commentCache[commentIndex]
+    // If parent is a submission, access comments parameter
+    } else if (comment.parent_id == submission.name && commentIndex < (submission.comments.length-1)) {
+        commentIndex += 1
+        next = submission.comments[commentIndex]
     }
 
     return next
@@ -248,24 +178,59 @@ function getParent(element) {
 }
 
 
-router.get('/', (req,res) => {
-    res.send("Website UP")
+router.get('/', async (req,res) => {
+    await test()
+    data = {
+        comment: {
+            name: comment.author.name,
+            body: comment.body
+        }
+    }
+    res.render('pages/index', data)
 })
 
-router.post('/navigate/previous', (req, res) => {
-    res.send("Previous")
+router.post('/navigate/previous', async (req, res) => {
+    comment = await getPrevComment(comment)
+    data = {
+        comment: {
+            name: comment.author.name,
+            body: comment.body
+        }
+    }
+    res.render('pages/index', data)
 })
 
-router.post('/navigate/next', (req, res) => {
-    res.send("Next")
+router.post('/navigate/next', async (req, res) => {
+    comment = await getNextComment(comment)
+    data = {
+        comment: {
+            name: comment.author.name,
+            body: comment.body
+        }
+    }
+    res.render('pages/index', data)
 })
 
-router.post('/navigate/parent', (req, res) => {
-    res.send("Parent")
+router.post('/navigate/parent', async (req, res) => {
+    comment = await getParentComment(comment)
+    data = {
+        comment: {
+            name: comment.author.name,
+            body: comment.body
+        }
+    }
+    res.render('pages/index', data)
 })
 
-router.post('/navigate/child', (req, res) => {
-    res.send("Child")
+router.post('/navigate/child', async (req, res) => {
+    comment = await getChildComment(comment)
+    data = {
+        comment: {
+            name: comment.author.name,
+            body: comment.body
+        }
+    }
+    res.render('pages/index', data)
 })
 
 module.exports = router

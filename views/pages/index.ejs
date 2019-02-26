@@ -6,6 +6,31 @@
 
 <body>
 
+<form action="/navigate/previous" method="POST">
+    <input type="submit" value="Previous">
+</form>
+
+<form action="/navigate/next" method="POST">
+    <input type="submit" value="Next">
+</form>
+
+<form action="/navigate/child" method="POST">
+    <input type="submit" value="Child">
+</form>
+
+<form action="/navigate/parent" method="POST">
+    <input type="submit" value="Parent">
+</form>
+
+<div>
+    <p>
+        Author: <%= comment.name %>
+    </p>
+    <p>
+        Body: <%= comment.body %>
+    </p>
+</div>
+
 
 
 </body>
