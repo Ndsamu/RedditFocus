@@ -13,19 +13,20 @@ $( document ).ready(function() {
         await getNextComment();
         updateButtonDisplay();
         updateCommentDisplay();
-        console.log(comment)
     });
 
     $('#parent').submit(async function(event) {
         event.preventDefault();
         clearCommentDisplay();
         await getParentComment();
+        $('#childBtn').css('color', '#000000');
         updateButtonDisplay();
         updateCommentDisplay();
     });
 
     $('#child').submit(async function(event) {
         event.preventDefault();
+        $('#childBtn').css('color', '#c2c2c2');
         clearCommentDisplay()
         await getChildComment();
         updateButtonDisplay();
@@ -35,6 +36,45 @@ $( document ).ready(function() {
 
     test()
 })
+
+// Arrow Key Functionality
+
+$(document).keydown(
+    async function(event) {
+        // Previous Comment
+        if (event.keyCode == 37) {      
+            $('#childBtn').css('color', '#c2c2c2');
+            await getPrevComment();
+            updateButtonDisplay();
+            updateCommentDisplay();
+        }
+        // Next Comment
+        if (event.keyCode == 39) {      
+            $('#childBtn').css('color', '#c2c2c2');
+            await getNextComment();
+            updateButtonDisplay();
+            updateCommentDisplay();
+   
+        }
+        // Parent Comment
+        if (event.keyCode == 38) {      
+            clearCommentDisplay();
+            await getParentComment();
+            $('#childBtn').css('color', '#000000');
+            updateButtonDisplay();
+            updateCommentDisplay();
+   
+        }
+        // Child Comment
+        if (event.keyCode == 40) {
+            $('#childBtn').css('color', '#c2c2c2');
+            clearCommentDisplay()
+            await getChildComment();
+            updateButtonDisplay();
+            updateCommentDisplay();
+        }
+    }
+);
 
 //////////////////////////////////  Display Functionality   //////////////////////////////////
 
