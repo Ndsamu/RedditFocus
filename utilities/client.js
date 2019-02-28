@@ -1,7 +1,3 @@
-// HUGE PERFORMANCE NOTE!!!! WE CAN CHECK IF A CHILD COMMENT EXISTS BY ONE OF THE PARAMETERS
-// WITHIN EACH COMMENT SO THAT WE DON'T HAVE TO MAKE NEEDLESS API CALLS IF NONE EXIST
-
-
 $( document ).ready(function() {
     $('#previous').submit(async function(event) {
         event.preventDefault();
