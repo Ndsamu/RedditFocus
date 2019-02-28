@@ -1,34 +1,36 @@
 <!DOCTYPE html>
 
-<script type="text/javascript" src="/utilities/urlParser.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/stylesheets/main.css" />
+<script type="text/javascript" src="/client.js"></script>
+<script type="text/javascript" src="/urlParser.js"></script>
 
 <html>
 
 <body>
 
-<form action="/navigate/previous" method="POST">
-    <input type="submit" value="Previous">
+<form id="previous">
+    <input class="btn" id="prevBtn" type="submit" value="Previous">
 </form>
 
-<form action="/navigate/next" method="POST">
-    <input type="submit" value="Next">
+<form id="next">
+    <input class="btn" id="nextBtn" type="submit" value="Next">
 </form>
 
-<form action="/navigate/child" method="POST">
-    <input type="submit" value="Child">
+<form id="child">
+    <input class="btn" id="childBtn" type="submit" value="Child">
 </form>
 
-<form action="/navigate/parent" method="POST">
-    <input type="submit" value="Parent">
+<form id="parent">
+    <input class="btn" id="parentBtn" type="submit" value="Parent">
 </form>
 
-<div>
-    <p>
-        Author: <%= comment.name %>
-    </p>
-    <p>
-        Body: <%= comment.body %>
-    </p>
+<br>
+<p id="loadStatus"></p>
+
+<div id="comment">
+    <p id="author"></p>
+    <p id="body"></p>
 </div>
 
 

@@ -9,6 +9,3 @@ function getAction(url) {
     parser.href = url;
     return url
 };
-
-
-module.exports = { parse, getAction }
