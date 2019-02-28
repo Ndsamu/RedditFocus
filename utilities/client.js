@@ -55,32 +55,46 @@ function updateCommentDisplay() {
 function updateButtonDisplay() {
     if (commentIndex == 0) {
         $('#prevBtn').css('color', '#c2c2c2')
+        $('#prevBtn').css('cursor', 'default')
     } else {
         $('#prevBtn').css('color', '#000000')
+        $('#prevBtn').css('cursor', 'pointer')
     }
     if (comment.parent_id == submission.name) {
         if (commentIndex == (submission.comments.length-1)) {
             $('#nextBtn').css('color', '#c2c2c2')
+            $('#nextBtn').css('cursor', 'default')
         } else {
             $('#nextBtn').css('color', '#000000')
+            $('#nextBtn').css('cursor', 'pointer')
         }
     } else {
         if (commentIndex == (commentCache.length-1) || commentCache.length == undefined) {
             $('#nextBtn').css('color', '#c2c2c2')
+            $('#nextBtn').css('cursor', 'default')
         } else {
             $('#nextBtn').css('color', '#000000')
+            $('#nextBtn').css('cursor', 'pointer')
         }
     }
     if (comment.parent_id == submission.name) {
         $('#parentBtn').css('color', '#c2c2c2')
+        $('#parentBtn').css('cursor', 'default')
     } else {
         $('#parentBtn').css('color', '#000000')
+        $('#parentBtn').css('cursor', 'pointer')
     }
+    // Avoids eradic behavior when quickly accessing next/prev comments
+    const index = commentIndex
     expandComment(comment, 1).then(comment => {
-        if (comment.replies[0] == undefined) {
-            $('#childBtn').css('color', '#c2c2c2')
-        } else {
-            $('#childBtn').css('color', '#000000')
+        if (index == commentIndex) {
+            if (comment.replies[0] == undefined) {
+                $('#childBtn').css('color', '#c2c2c2')
+                $('#childBtn').css('cursor', 'default')
+            } else {
+                $('#childBtn').css('color', '#000000')
+                $('#childBtn').css('cursor', 'pointer')
+            }
         }
     })
 }
